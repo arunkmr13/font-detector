@@ -5,9 +5,8 @@ from schemas import PairingResponse, FontPairing
 
 settings = get_settings()
 
-# Configure Gemini once at module load
-genai.configure(api_key=settings.gemini_api_key)
-model = genai.GenerativeModel("gemini-1.5-flash")  # free tier model
+from google import genai
+client = genai.Client(api_key=settings.gemini_api_key)
 
 
 async def get_font_pairings(font_name: str, use_case: str | None = None) -> PairingResponse:
@@ -50,7 +49,10 @@ Rules:
 - Roles: body, heading, accent, or code"""
 
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         raw = response.text.strip()
 
         # Strip markdown fences if present

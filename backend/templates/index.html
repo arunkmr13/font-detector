@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Font Detector</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f13;
+      color: #e8e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header h1 span { color: #7c6af7; }
+    header p { color: #888; margin-top: 0.4rem; font-size: 0.95rem; }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: #1a1a24;
+      padding: 0.4rem;
+      border-radius: 10px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #7c6af7;
+      color: #fff;
+    }
+
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a38;
+      border-radius: 14px;
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .drop-zone {
+      border: 2px dashed #2a2a38;
+      border-radius: 10px;
+      padding: 3rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover { border-color: #7c6af7; }
+    .drop-zone p { color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
+    .drop-zone .icon { font-size: 2.5rem; }
+
+    input[type="file"] { display: none; }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #0f0f13;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      color: #e8e8f0;
+      padding: 0.7rem 1rem;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus { border-color: #7c6af7; }
+
+    button.primary {
+      background: #7c6af7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    button.primary:hover { background: #6a58e0; }
+    button.primary:disabled { background: #3a3a50; color: #666; cursor: not-allowed; }
+
+    .results { margin-top: 1.5rem; }
+    .results h3 { font-size: 1rem; color: #888; margin-bottom: 1rem; }
+
+    .font-card {
+      background: #0f0f13;
+      border: 1px solid #2a2a38;
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .font-name { font-weight: 600; font-size: 1rem; }
+    .font-meta { font-size: 0.8rem; color: #666; margin-top: 0.2rem; }
+
+    .confidence-bar {
+      width: 80px;
+      height: 6px;
+      background: #2a2a38;
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: #7c6af7;
+      border-radius: 3px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      background: #2a2a38;
+      color: #aaa;
+      flex-shrink: 0;
+    }
+
+    .badge.free { background: #1a3a2a; color: #4caf88; }
+
+    .pairing-btn {
+      background: transparent;
+      border: 1px solid #7c6af7;
+      color: #7c6af7;
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .pairing-btn:hover { background: #7c6af7; color: #fff; }
+
+    .pairing-card {
+      background: #0f0f13;
+      border: 1px solid #2a2a38;
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .pairing-role {
+      font-size: 0.75rem;
+      color: #7c6af7;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pairing-font { font-weight: 600; margin: 0.2rem 0; }
+    .pairing-rationale { font-size: 0.85rem; color: #777; }
+
+    .status {
+      text-align: center;
+      padding: 1.5rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .error {
+      background: #2a1a1a;
+      border: 1px solid #5a2a2a;
+      color: #f08080;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #444;
+      border-top-color: #7c6af7;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .overall { 
+      font-size: 0.85rem; 
+      color: #666; 
+      font-style: italic; 
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2a2a38;
+    }
+
+    a { color: #7c6af7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Font <span>Detector</span></h1>
+      <p>Identify fonts from images or URLs · AI-powered pairing suggestions</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('image')">📷 Image Upload</button>
+      <button class="tab" onclick="switchTab('url')">🌐 Scan URL</button>
+      <button class="tab" onclick="switchTab('pairings')">🎨 Font Pairings</button>
+    </div>
+
+    <!-- IMAGE TAB -->
+    <div id="panel-image" class="panel active">
+      <div class="card">
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="icon">🖼️</div>
+          <strong>Drop an image here or click to upload</strong>
+          <p>JPEG, PNG, WebP, GIF · Max 10MB</p>
+        </div>
+        <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)" />
+        <img id="preview-img" class="preview-img" />
+        <div style="margin-top:1rem; text-align:right;">
+          <button class="primary" id="detect-btn" onclick="detectFont()" disabled>Detect Font</button>
+        </div>
+        <div id="image-results"></div>
+      </div>
+    </div>
+
+    <!-- URL TAB -->
+    <div id="panel-url" class="panel">
+      <div class="card">
+        <div class="input-row">
+          <input type="text" id="url-input" placeholder="https://example.com" />
+          <button class="primary" onclick="scanURL()">Scan</button>
+        </div>
+        <div id="url-results"></div>
+      </div>
+    </div>
+
+    <!-- PAIRINGS TAB -->
+    <div id="panel-pairings" class="panel">
+      <div class="card">
+        <div class="input-row">
+          <input type="text" id="font-input" placeholder="Font name e.g. Helvetica Neue" />
+          <input type="text" id="usecase-input" placeholder="Use case e.g. editorial (optional)" style="max-width:200px;" />
+          <button class="primary" onclick="getPairings()">Suggest</button>
+        </div>
+        <div id="pairings-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://127.0.0.1:8001'
+    let selectedFile = null
+
+    // ── Tabs ──────────────────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', ['image','url','pairings'][i] === name)
+      })
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+      document.getElementById(`panel-${name}`).classList.add('active')
+    }
+
+    // ── Drag & Drop ───────────────────────────────────────────────────────
+    const dropZone = document.getElementById('drop-zone')
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover') })
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'))
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault()
+      dropZone.classList.remove('dragover')
+      const file = e.dataTransfer.files[0]
+      if (file) setFile(file)
+    })
+
+    function handleFileSelect(e) { setFile(e.target.files[0]) }
+
+    function setFile(file) {
+      selectedFile = file
+      const preview = document.getElementById('preview-img')
+      preview.src = URL.createObjectURL(file)
+      preview.style.display = 'block'
+      document.getElementById('detect-btn').disabled = false
+      document.getElementById('image-results').innerHTML = ''
+    }
+
+    // ── Detect Font ───────────────────────────────────────────────────────
+    async function detectFont() {
+      if (!selectedFile) return
+      const btn = document.getElementById('detect-btn')
+      const resultsEl = document.getElementById('image-results')
+
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>Detecting...'
+      resultsEl.innerHTML = ''
+
+      try {
+        const form = new FormData()
+        form.append('file', selectedFile)
+        const res = await fetch(`${API}/api/detect`, { method: 'POST', body: form })
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        renderFontMatches(data.matches, resultsEl)
+      } catch (e) {
+        resultsEl.innerHTML = `<div class="error">❌ ${e.message}</div>`
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = 'Detect Font'
+      }
+    }
+
+    // ── Scan URL ──────────────────────────────────────────────────────────
+    async function scanURL() {
+      const url = document.getElementById('url-input').value.trim()
+      if (!url) return
+      const resultsEl = document.getElementById('url-results')
+      resultsEl.innerHTML = '<div class="status"><span class="spinner"></span>Scanning page...</div>'
+
+      try {
+        const res = await fetch(`${API}/api/scan-url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        renderScannedFonts(data.fonts, resultsEl)
+      } catch (e) {
+        resultsEl.innerHTML = `<div class="error">❌ ${e.message}</div>`
+      }
+    }
+
+    // ── Get Pairings ──────────────────────────────────────────────────────
+    async function getPairings(fontName) {
+      const name = fontName || document.getElementById('font-input').value.trim()
+      const useCase = document.getElementById('usecase-input')?.value.trim() || ''
+      if (!name) return
+
+      if (!fontName) switchTab('pairings')
+
+      const resultsEl = document.getElementById('pairings-results')
+      resultsEl.innerHTML = '<div class="status"><span class="spinner"></span>Asking AI for pairings...</div>'
+
+      try {
+        const res = await fetch(`${API}/api/pairings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ font_name: name, use_case: useCase || null }),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        renderPairings(data, resultsEl)
+      } catch (e) {
+        resultsEl.innerHTML = `<div class="error">❌ ${e.message}</div>`
+      }
+    }
+
+    // ── Render Helpers ────────────────────────────────────────────────────
+    function renderFontMatches(matches, el) {
+      if (!matches || matches.length === 0) {
+        el.innerHTML = '<div class="status">No fonts detected.</div>'
+        return
+      }
+      el.innerHTML = `<div class="results"><h3>Detected Fonts</h3>${
+        matches.map(f => `
+          <div class="font-card">
+            <div>
+              <div class="font-name">${f.name}</div>
+              <div class="font-meta">${f.category || 'Unknown category'} · ${Math.round(f.confidence * 100)}% confidence</div>
+            </div>
+            <div class="confidence-bar"><div class="confidence-fill" style="width:${f.confidence*100}%"></div></div>
+            <span class="badge ${f.price_usd === null ? 'free' : ''}">${f.price_usd === null ? 'Free' : '$'+f.price_usd}</span>
+            <button class="pairing-btn" onclick="getPairingsFromCard('${f.name}')">Pair →</button>
+          </div>
+        `).join('')
+      }</div>`
+    }
+
+    function renderScannedFonts(fonts, el) {
+      if (!fonts || fonts.length === 0) {
+        el.innerHTML = '<div class="status">No fonts found on that page.</div>'
+        return
+      }
+      el.innerHTML = `<div class="results"><h3>${fonts.length} fonts found</h3>${
+        fonts.map(f => `
+          <div class="font-card">
+            <div>
+              <div class="font-name">${f.name}</div>
+              <div class="font-meta">${f.element_count} elements · ${f.is_web_font ? '🌐 Web font' : '💻 System font'}</div>
+            </div>
+            <button class="pairing-btn" onclick="getPairingsFromCard('${f.name}')">Pair →</button>
+          </div>
+        `).join('')
+      }</div>`
+    }
+
+    function renderPairings(data, el) {
+      el.innerHTML = `
+        <div class="results">
+          <h3>Pairings for "${data.base_font}"</h3>
+          ${data.pairings.map(p => `
+            <div class="pairing-card">
+              <div class="pairing-role">${p.role}</div>
+              <div class="pairing-font">${p.font_name}</div>
+              <div class="pairing-rationale">${p.rationale}</div>
+            </div>
+          `).join('')}
+          <div class="overall">💡 ${data.overall_rationale}</div>
+        </div>`
+    }
+
+    function getPairingsFromCard(fontName) {
+      document.getElementById('font-input').value = fontName
+      switchTab('pairings')
+      getPairings(fontName)
+    }
+  </script>
+</body>
+</html>
