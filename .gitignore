@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+
+# Node
+font-detector-ui/node_modules/
+font-detector-ui/.next/
+
+# Mac
+.DS_Store
+
+# ML models (too large for git)
+backend/ml/*.onnx
+backend/ml/*.json
+
+# Logs
+*.log
